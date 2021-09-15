@@ -5,12 +5,14 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 var CardrentSchema = Schema({
 	title: String,
-	minPrice : Number,
+	minPrice : String,
 	minNights: Number,
 	minCapacity: Number,
-	capacity: Number,
+	capacity: [Number],
+	services:[String],
 	logo: String,
 	image: String,
+	images:[String],
 	thumbnail: String,
 	type:[String],
 	web: String,
@@ -18,8 +20,10 @@ var CardrentSchema = Schema({
 	numLevelFeedback: String,
 	numLevelLocation: Number,
 	maps:String,
-	text:String,
-	emitterCard:Schema.Types.ObjectId
+	text:String,	
+	//emitterCard:Schema.Types.ObjectId
+	//emitterCard:{type:Schema.ObjectId,ref:"User"}
+
 })
 
 module.exports = mongoose.model('Cardrent',CardrentSchema);

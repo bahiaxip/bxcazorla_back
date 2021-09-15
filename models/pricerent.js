@@ -5,8 +5,10 @@ const Schema = mongoose.Schema;
 
 const PricerentSchema = Schema({	
 	capacity:Number,
-	minNight:Number,
-	extraNight:Number,
+	type:String,
+	minNights:Number,
+	priceBase:Number,
+	priceNight:Number,
 	rentId:Schema.Types.ObjectId	
 
 })

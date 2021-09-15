@@ -8,7 +8,7 @@ var controller = {
 
 	},
 	getPricesByRent:(req,res) => {
-
+		
 	}
 }
 

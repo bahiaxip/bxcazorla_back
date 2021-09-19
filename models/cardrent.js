@@ -2,6 +2,12 @@
 
 const mongoose = require("mongoose");
 
+
+//necesario añadir un pricerent array de objetos algo similar a:
+//....,
+//pricerent:[{capacity:Number,minNights:Number,priceBase:Number,priceNight:Number}],
+//....,
+
 const Schema = mongoose.Schema;
 var CardrentSchema = Schema({
 	title: String,
@@ -9,10 +15,12 @@ var CardrentSchema = Schema({
 	minNights: Number,
 	minCapacity: Number,
 	capacity: [Number],
+	capacities:[],
 	services:[String],
 	logo: String,
 	image: String,
 	images:[String],
+	selectedImage:String,
 	thumbnail: String,
 	type:[String],
 	web: String,

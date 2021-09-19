@@ -17,7 +17,8 @@ const storage = multer.diskStorage({
 	}
 })
 const md_upload=multer({storage:storage});
-router.get("/cardrent",CardRentController.getCards);
+router.get("/cardrents",CardRentController.getCards);
 router.post("/cardrent",CardRentController.saveCardRent);
 router.post("/images/:id",md_upload.array("files"),CardRentController.uploadImages);
+router.get("/images/:id",CardRentController.getImagesById);
 module.exports = router;

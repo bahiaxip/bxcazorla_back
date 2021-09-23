@@ -5,9 +5,11 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const FeedbackrentSchema = Schema({
-	feedLevel:Number,
-	feedText:String,			
-	emitterId:Schema.Types.ObjectId
+	nick:String,	
+	email: String,
+	feedback:Number,		
+	text:String,			
+	rentId:{type:Schema.ObjectId,ref:"Cardrent"}
 
 })
 

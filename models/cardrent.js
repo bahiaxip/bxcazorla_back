@@ -25,7 +25,7 @@ var CardrentSchema = Schema({
 	type:[String],
 	web: String,
 	phone: String,
-	numLevelFeedback: String,
+	numLevelFeedback: Number,
 	numLevelLocation: Number,
 	maps:String,
 	text:String,	

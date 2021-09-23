@@ -110,8 +110,11 @@ var controller = {
 		cardrent.services=params.services;
 		cardrent.web=params.web;
 		cardrent.phone=params.phone;
-			cardrent.numLevelFeedback=null;
-		cardrent.numLevelLocation=0;
+		cardrent.numLevelFeedback=0;
+		if(params.numLevelLocation)
+			cardrent.numLevelLocation=params.numLevelLocation;
+		else
+			cardrent.numLevelLocation=null;
 		cardrent.maps=params.maps;
 		cardrent.text=params.text
 		cardrent.save((err,cardrentStored)=> {
@@ -131,7 +134,9 @@ var controller = {
 				//vienen incluidas en el array images y las imágenes deben estar almacenadas en
 				//el directorio assets/... del frontend. Para ello comprobamos si el array imágenes
 				//no viene vacío y en ese caso crear un documento ImageCardRent por cada elemento del array
-				if(params.images.length>0){
+				console.log("params: ",params)
+				if(params.images && params.images.length>0){
+					console.log("existen images")
 					let imas=params.images;
 					imas.map((ima)=>{
 						let imagecardrent = new ImageCardRent();
@@ -297,6 +302,22 @@ var controller = {
 	},
 	removeUploadedFile:function(file_path){
 		fs.unlinkSync(file_path);
+	},
+
+	deleteCardRents:(req,res) => {
+		CardRent.deleteMany({},(err,cardrents) => {
+			if(err) return res.status(500).send({message: "No se pudieron eliminar los alojamientos"})
+			if(!cardrents) return res.status(404).send({message: "No existen alojamientos que eliminar"});
+			return res.status(200).send({message: "Todos los alojamientos han sido eliminados"})
+		})
+	},
+
+	deleteImagesCardRent:(req,res) => {
+		ImageCardRent.deleteMany({},(err,images) => {
+			if(err) return res.status(500).send({message: "No se pudieron eliminar las imágenes"})
+			if(!images) return res.status(404).send({message: "No existen imágenes que eliminar"})
+			return res.status(200).send({message: "Todas las imágenes han sido eliminadas"})
+		})
 	}
 }
 

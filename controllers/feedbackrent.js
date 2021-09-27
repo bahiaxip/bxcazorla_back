@@ -3,6 +3,10 @@ var Feedbackrent = require('../models/feedbackrent');
 var CardRent = require('../models/cardrent');
 
 var controller = {
+	//el getFeeds devuelve todos los feeds y en el front se filtran por id,
+	//esto se hace para no llamar a la db cada vez que se selecciona un rentcard.
+	//Cuando se añada la paginación en rentcards, en lugar de todos los feedbacks,
+	//se debería llamar a todos los feedbacks por página de rentcards
 	getFeeds:(req,res) => {
 		Feedbackrent.find({},function(err,feeds) {
 			if(err) return res.status(200).send({message: "Hubo un error obteniendo valoraciones"})
@@ -54,6 +58,8 @@ var controller = {
 			})
 		})
 	},
+	//por ahora no se utiliza, para no llamar a la db cada vez que se selecciona 
+	//un card
 	getFeedsByRentId:(req,res) => {
 		let id;
 		if(req.params && req.params.id){

@@ -19,6 +19,11 @@ app.use((req,res,next) =>{
 
 app.use(bodyParser.urlencoded({extended:false}));
 app.use(bodyParser.json());
+
+//para mostrar imagen: añadir la ruta: http://localhost:[port]/[directorio]/imagen
+//ejemplo para este proyecto: http://localhost:3900/images/37ig9aia2dic9.jpg
+app.use("/images",express.static('uploads',{redirect: false}));
+
 app.use('/',cardrent_routes);
 app.use('/',feedbackrent_routes);
 app.use('/',pricerent_routes);

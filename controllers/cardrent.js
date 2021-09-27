@@ -138,6 +138,7 @@ var controller = {
 				if(params.images && params.images.length>0){
 					console.log("existen images")
 					let imas=params.images;
+					console.log("las imágenes: ",params.images)
 					imas.map((ima)=>{
 						let imagecardrent = new ImageCardRent();
 						let splitname=path.basename(ima).split('\.');
@@ -151,7 +152,6 @@ var controller = {
 						imagecardrent.rentId=cardrentStored._id;
 						imagecardrent.save((err, imaStored) => {
 							if(err) return res.status(500).send({message: "hubo un error al guardar la imagen"})
-
 						})
 						
 					})
@@ -219,6 +219,16 @@ var controller = {
 		});
 	},
 
+	getImages(){
+		ImageCardRent.find({},(err,images) => {
+			if(err) return res.status(500).send({message: "Hubo un error al obtener todas las imágenes"});
+			if(!images) return res.status(404).send({message: "No existen imágenes"})
+			return res.status(200).send({
+				images
+			})
+		})
+	},
+
 	getImagesById:function(req,res){
 		let id;
 		if(req.params && req.params.id){
@@ -254,21 +264,30 @@ var controller = {
 			let ext = splitname[1];
 			let type= file.mimetype;
 			//validamos la extensión y peso (máximo 2MB) y 
-	//1048576bytes=1024Kbytes=1MB 
+	//1048576bytes=1024Kbytes=1MB
+			 
 			if(type == "image/jpeg" || type=="image/png" || type=="image/gif"){
 				if(file.size < (1048576 * 2)){
 					let image = new ImageCardRent();
 					image.name=file.filename;
 					image.originalName=file.originalname;					
-					image.path=file.destination;
+					image.path=file.destination+'/'+id+'/';
 					image.ext=ext;
 					image.size=file.size;
 					image.type=type;
 					image.rentId=id;
 
 					image.save((err,imageStored) => {
-						if(err) return res.status(500).send({message: "Error al guardar imagen"})						
+						console.log("llega al save de imágenes: ",id)
+						if(err) return res.status(500).send({message: "Error al guardar imagen"})
+						CardRent.findByIdAndUpdate(id,{$push:{"images":file.filename}},(err,cardrent) => {
+								console.log("guarda la imagen")		
+								if(err) return res.status(500).send({message: "Hubo un error al registrar la imagen almacenada en cardrent"})
+									console.log("cardrent: ",cardrent)
+								//cardrent.images.push(file.destination+file.filename);
+							})
 					})
+
 
 				}else{
 					//establecemos mensaje				

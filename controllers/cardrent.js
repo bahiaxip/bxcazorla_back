@@ -2,6 +2,7 @@
 var CardRent = require('../models/cardrent');
 var PriceRent=require('../models/pricerent');
 var ImageCardRent = require("../models/image");
+var Feedbackrent = require("../models/feedbackrent");
 var path = require("path");
 var fs = require("fs")
 var controller = {
@@ -95,13 +96,22 @@ var controller = {
 			cardrent.minNights=null;
 			cardrent.minCapacity=null;
 		}
+	//si images contiene algo quiere decir que es uno de los registros de alojamientos
+	//que tenemos creados por defecto en cardrentdata(frontend), con sus imágenes
+	//correspondientes alojadas en assets/images/... (frontend) y sus correspondientes 
+	//feedbacks en feedbackrentdata (frontend), esto nos permite limpiar y recargar la db
+	//mediante el método fillDB() que se encuentra en el servicio (cardrent.service).
 
-			
-		
+//Para asignar la ruta correcta, ya que las imágenes de los registros por defecto
+//son diferentesde las imágenes alojadas en el server establecemos a las que son por defecto
+//el valor original en el campo image y a las del server no asignamos nada
+		if(params.images && params.images.length>0)
+			cardrent.image="original";
+		else
+			cardrent.image=null;
 
 		cardrent.images=params.images;
 		cardrent.logo=null;
-		cardrent.image=null;
 		cardrent.selectedImage=null;		
 		cardrent.thumbnail=null;
 		if(Array.isArray(params.type)){
@@ -152,6 +162,7 @@ var controller = {
 						imagecardrent.rentId=cardrentStored._id;
 						imagecardrent.save((err, imaStored) => {
 							if(err) return res.status(500).send({message: "hubo un error al guardar la imagen"})
+
 						})
 						
 					})
@@ -258,51 +269,57 @@ var controller = {
 			//Si no existe id no es posible asignar la imagen
 		}
 
-		req.files.forEach((file) => {
-			let splitname=path.basename(file.originalname).split('\.');
-			//extension
-			let ext = splitname[1];
-			let type= file.mimetype;
-			//validamos la extensión y peso (máximo 2MB) y 
-	//1048576bytes=1024Kbytes=1MB
-			 
-			if(type == "image/jpeg" || type=="image/png" || type=="image/gif"){
-				if(file.size < (1048576 * 2)){
-					let image = new ImageCardRent();
-					image.name=file.filename;
-					image.originalName=file.originalname;					
-					image.path=file.destination+'/'+id+'/';
-					image.ext=ext;
-					image.size=file.size;
-					image.type=type;
-					image.rentId=id;
+		var promise = 
+		new Promise((res,rej) => {
+			req.files.forEach((file,index) => {
+				let splitname=path.basename(file.originalname).split('\.');
+				//extension
+				let ext = splitname[1];
+				let type= file.mimetype;
+				//validamos la extensión y peso (máximo 2MB) y 
+		//1048576bytes=1024Kbytes=1MB
+				 
+				if(type == "image/jpeg" || type=="image/png" || type=="image/gif"){
+					if(file.size < (1048576 * 2)){
+						let image = new ImageCardRent();
+						image.name=file.filename;
+						image.originalName=file.originalname;					
+						//image.path=file.destination+'/'+id+'/';
+						image.path=file.destination+'/';
+						image.ext=ext;
+						image.size=file.size;
+						image.type=type;
+						image.rentId=id;
 
-					image.save((err,imageStored) => {
-						console.log("llega al save de imágenes: ",id)
-						if(err) return res.status(500).send({message: "Error al guardar imagen"})
-						CardRent.findByIdAndUpdate(id,{$push:{"images":file.filename}},(err,cardrent) => {
-								console.log("guarda la imagen")		
-								if(err) return res.status(500).send({message: "Hubo un error al registrar la imagen almacenada en cardrent"})
-									console.log("cardrent: ",cardrent)
-								//cardrent.images.push(file.destination+file.filename);
-							})
-					})
+						image.save((err,imageStored) => {
+							console.log("llega al save de imágenes: ",id)
+							if(err) return res.status(500).send({message: "Error al guardar imagen"})
+							CardRent.findByIdAndUpdate(id,{$push:{"images":file.filename}},(err,cardrent) => {
+									console.log("guarda la imagen")		
+									if(err) return res.status(500).send({message: "Hubo un error al registrar la imagen almacenada en cardrent"})
+										console.log("cardrent: ",cardrent)
+									if (index === req.files.length -1) res();
+									//cardrent.images.push(file.destination+file.filename);
+								})
+						})
 
 
+					}else{
+						//establecemos mensaje				
+						warningSize="Alguna de las imágenes no ha sido incluida, es superior a 2MB";
+						//eliminamos imagen (síncrono)
+						controller.removeUploadedFile(file.path);
+					}
+					
 				}else{
 					//establecemos mensaje				
-					warningSize="Alguna de las imágenes no ha sido incluida, es superior a 2MB";
+					warningType="Alguna de las imágenes no ha sido incluida, no es una imagen válida";
 					//eliminamos imagen (síncrono)
-					controller.removeUploadedFile(file.path);
+					controller.removeUploadedFile(file.path+file.filename);
 				}
-				
-			}else{
-				//establecemos mensaje				
-				warningType="Alguna de las imágenes no ha sido incluida, no es una imagen válida";
-				//eliminamos imagen (síncrono)
-				controller.removeUploadedFile(file.path+file.filename);
-			}
+			})
 		})
+		
 		//mensajes de warning si alguna de las imágenes sobrepasa los 2MB
 		//o no es imagen	
 		let data={};
@@ -316,8 +333,11 @@ var controller = {
 		if(warningType){
 			data.warningType=warningType;
 		}
-		//return res.status(200).send({message: message});
-		return res.status(200).send(data);
+		promise.then(()=> {
+			//return res.status(200).send({message: message});
+			return res.status(200).send(data);	
+		})
+		
 	},
 	removeUploadedFile:function(file_path){
 		fs.unlinkSync(file_path);
@@ -337,7 +357,81 @@ var controller = {
 			if(!images) return res.status(404).send({message: "No existen imágenes que eliminar"})
 			return res.status(200).send({message: "Todas las imágenes han sido eliminadas"})
 		})
+	},
+	//Eliminar CardRent, (test feedbacks and delete, test images and delete, delete cardrent)
+	deleteCardRentById:(req,res)=> {
+		let id=null;
+		if(req.params && req.params.id){
+			id=req.params.id;	
+		}
+		if(id){
+			Feedbackrent.deleteMany({"rentId":id})
+			.then((data) => {
+				console.log( "Todas las valoraciones han sido eliminadas: ",data.deletedCount)
+			}).then(()=> {				
+				ImageCardRent.find({rentId:id},(err,images) => {
+					if(err) return res.status(500).send({message: "Hubo un error eliminado las imágenes"})
+					if(!images) return res.status(404).send({message: "No existen imágenes"})
+					//console.log("images: ",images)
+			//en lugar de utilizar un map y eliminar archivo a archivo,
+			//utilizamos el existsSync para comprobar el directorio y
+			//el rmdir (recursive:true) para eliminar el directorio con todo su contenido
+					if(images[0] && images[0].path && images[0].path.substring(0,14) != "assets/images/"){
+						let path_id='./uploads/'+id;
+						if(fs.existsSync(path_id))
+						fs.rmdir(path_id,{recursive:true},()=> {
+							console.log("directorio de imágenes borrado")
+						})
+					}
+					/*
+					images.map((image) => {
+						//si el directorio es assets/images/ (ruta de imágenes de los cardrent por defecto)
+						//no se elimina, el resto se eliminan una a una
+						if(image.path.substring(0,14) != "assets/images/"){
+							console.log("llega al condicional")
+							//eliminamos la última barra (/) del directorio 
+							let pathLessLastChar=image.path.substring(0,image.path.length-1);
+							console.log(pathLessLastChar)
+							console.log(image.path+image.name)
+							//en lugar de eliminar archivo por archivo se puede eliminar todo el directorio
+							//(fs.rm(path,{options},callback))
+							if(fs.existsSync(pathLessLastChar) && fs.existsSync(image.path+image.name)){
+								console.log("ha pasado: ",image.path+image.name)
+								//fs.unlinkSync(image.path+image.name);
+								
+								//eliminar directorio completo
+								fs.rmdir(pathLessLastChar,{recursive:true},()=> {
+									console.log("directorio borrado")
+								})
+								
+							}
+						}
+					})
+					*/
+				})
+			}).then(()=> {				
+				//eliminamos registros de la db de images 
+				ImageCardRent.deleteMany({rentId:id});
+				//eliminamos registros de la db de cardrent 
+				CardRent.findByIdAndDelete(id,(err,deletedCardRent) => {
+					if(err) return res.status(500).send({message: "Hubo un error al eliminar el alojamiento"});
+					if(!deletedCardRent) return res.status(404).send({message: "No se encontró el alojamiento"});					
+					return res.status(200).send({message: "El alojamiento se ha eliminado correctamente"})
+				});
+
+
+			})
+			/*
+			CardRent.findByIdAndDelete(id,(err,cardrent) => {
+				if(err) return status(500).send({message: "Hubo un error  en la eliminación del alojamiento"});
+				if(!cardrent) return res.status(404).send({message: "No se encontró el alojamiento"})
+				return res.status(200).send({message: "Alojamiento eliminado correctamente"});
+			})
+			*/	
+		}
+		
 	}
+
 }
 
 function checkString(value){

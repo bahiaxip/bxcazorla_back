@@ -30,4 +30,5 @@ router.post("/images/:id",md_upload.array("files"),CardRentController.uploadImag
 router.get("/images/:id",CardRentController.getImagesById);
 router.delete("/cardrents",CardRentController.deleteCardRents);
 router.delete("/images",CardRentController.deleteImagesCardRent);
+router.delete("/image/:id",CardRentController.deleteCardRentById);
 module.exports = router;

@@ -350,8 +350,15 @@ var controller = {
 			return res.status(200).send({message: "Todos los alojamientos han sido eliminados"})
 		})
 	},
-
+//necesario eliminar todos los directorios dentro de uploads
 	deleteImagesCardRent:(req,res) => {
+		//en lugar de listar archivos y eliminarlos, al ser el directorio principal(siempre es uploads) 
+		//eliminamos el directorio recursivamente y creamos de nuevo
+		fs.rmdir('./uploads',{recursive:true},()=> {
+			console.log("eliminando directorio principal")
+			fs.mkdirSync("./uploads");
+		});
+
 		ImageCardRent.deleteMany({},(err,images) => {
 			if(err) return res.status(500).send({message: "No se pudieron eliminar las imágenes"})
 			if(!images) return res.status(404).send({message: "No existen imágenes que eliminar"})
